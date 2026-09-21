@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.isaluki.LogRead</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <name>LogRead</name>
+  <summary>Read the logs on this computer</summary>
+
+  <description>
+    <p>
+      LogRead finds the logs on your computer and shows them by the application
+      or service they belong to, so you do not have to know that the printer
+      writes to /var/log/cups or that your Flatpak app keeps its own log under
+      your home folder.
+    </p>
+    <p>Each log opens three ways:</p>
+    <ul>
+      <li>Overview counts the errors and warnings, charts when they happened, and lists the problems that repeat most.</li>
+      <li>Highlights shows every error and warning as its own card, with a copy button and a count of how often it recurred.</li>
+      <li>Full log shows the file exactly as written, coloured by severity and searchable.</li>
+    </ul>
+    <p>
+      It reads plain files, rotated archives, compressed archives and the
+      systemd journal, and works out the format itself — syslog, JSON lines,
+      logfmt, nginx, Apache, Xorg, kernel, dpkg, DNF and pacman among others.
+      Logs that need administrator access are marked, and can be unlocked from
+      the window when you choose to.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.isaluki.LogRead.desktop</launchable>
+  <url type="homepage">https://github.com/iSaluki/logread</url>
+  <url type="bugtracker">https://github.com/iSaluki/logread/issues</url>
+
+  <developer id="io.github.isaluki">
+    <name>The LogRead contributors</name>
+  </developer>
+
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="1.0.0" date="2026-09-21">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

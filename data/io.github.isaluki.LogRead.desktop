@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=LogRead
+GenericName=Log Viewer
+Comment=Read the logs on this computer without hunting for them
+Keywords=log;logs;journal;systemd;error;warning;debug;syslog;troubleshoot;diagnostics;
+Exec=logread
+Icon=io.github.isaluki.LogRead
+Terminal=false
+Type=Application
+Categories=System;Monitor;GTK;
+StartupNotify=true
+X-GNOME-UsesNotifications=false

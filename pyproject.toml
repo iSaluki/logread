@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "logread"
+version = "1.0.0"
+description = "Read the logs on this computer without hunting for them"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "The LogRead contributors" }]
+keywords = ["logs", "journald", "systemd", "gtk4", "libadwaita", "gnome"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: X11 Applications :: GTK",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Logging",
+  "Topic :: System :: Systems Administration",
+]
+# PyGObject and the GTK4/libadwaita libraries come from the distribution, not
+# from PyPI: installing them with pip would build a second, unusable copy.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/iSaluki/logread"
+Issues = "https://github.com/iSaluki/logread/issues"
+
+[project.scripts]
+logread = "logread.app:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"logread.ui" = ["*.css"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]

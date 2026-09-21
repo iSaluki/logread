@@ -1,0 +1,171 @@
+/* LogRead — styling layered on top of Adwaita.
+ *
+ * Everything here builds on libadwaita's named colours so the window follows
+ * the system light/dark preference and the user's accent colour. Nothing
+ * hard-codes a palette.
+ */
+
+/* ---------------------------------------------------------------- severity */
+
+.sev-critical { color: @error_color; }
+.sev-error    { color: @error_color; }
+.sev-warning  { color: @warning_color; }
+.sev-notice   { color: @accent_color; }
+.sev-info,
+.sev-debug,
+.sev-unknown  { color: alpha(currentColor, 0.7); }
+
+/* Small uppercase badge that labels an entry's severity. */
+.severity-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  min-width: 3.4rem;
+  background-color: alpha(currentColor, 0.13);
+}
+.severity-pill.sev-critical,
+.severity-pill.sev-error   { background-color: alpha(@error_color, 0.15); }
+.severity-pill.sev-warning { background-color: alpha(@warning_color, 0.18); }
+.severity-pill.sev-notice  { background-color: alpha(@accent_color, 0.15); }
+
+/* ------------------------------------------------------------ stat tiles */
+
+.stat-tile {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background-color: alpha(currentColor, 0.05);
+}
+.stat-tile.is-error   { background-color: alpha(@error_color, 0.11); }
+.stat-tile.is-warning { background-color: alpha(@warning_color, 0.13); }
+.stat-tile.is-clear   { background-color: alpha(@success_color, 0.11); }
+
+.stat-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  font-feature-settings: "tnum" 1;
+}
+.stat-label {
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+/* --------------------------------------------------------- activity strip */
+
+/* The signature of the window: one column per time slice, stacked by
+ * severity, so a burst of errors is visible before a single line is read. */
+.activity-strip {
+  padding: 4px 2px 0 2px;
+}
+.activity-bucket {
+  padding: 0;
+  margin: 0 1px;
+  min-width: 4px;
+  border-radius: 3px;
+  background: none;
+  box-shadow: none;
+  border: none;
+  outline-offset: 2px;
+}
+.activity-bucket:hover { background-color: alpha(currentColor, 0.10); }
+.activity-bucket.is-selected { background-color: alpha(@accent_color, 0.20); }
+
+.activity-segment {
+  min-width: 4px;
+  border-radius: 2px;
+  margin-top: 1px;
+}
+.activity-segment.seg-error   { background-color: @error_color; }
+.activity-segment.seg-warning { background-color: @warning_color; }
+.activity-segment.seg-other   { background-color: alpha(currentColor, 0.22); }
+.activity-segment.seg-empty   { background-color: alpha(currentColor, 0.08); min-height: 2px; }
+
+.activity-axis {
+  font-size: 0.78rem;
+  opacity: 0.6;
+  font-feature-settings: "tnum" 1;
+}
+.legend-swatch {
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 3px;
+}
+.legend-swatch.seg-error   { background-color: @error_color; }
+.legend-swatch.seg-warning { background-color: @warning_color; }
+.legend-swatch.seg-other   { background-color: alpha(currentColor, 0.22); }
+
+/* ------------------------------------------------------------ problem rows */
+
+.problem-row {
+  background: none;
+}
+.problem-card {
+  border-radius: 12px;
+  background-color: @card_bg_color;
+  border: 1px solid alpha(currentColor, 0.09);
+  padding: 10px 8px 10px 12px;
+  margin: 3px 0;
+}
+.problem-card:hover { background-color: mix(@card_bg_color, currentColor, 0.04); }
+.problem-card.is-error   { border-left: 3px solid @error_color; }
+.problem-card.is-warning { border-left: 3px solid @warning_color; }
+
+.problem-message {
+  font-family: monospace;
+  font-size: 0.92rem;
+}
+.problem-meta {
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+.repeat-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background-color: alpha(currentColor, 0.12);
+  font-feature-settings: "tnum" 1;
+}
+.problem-detail {
+  font-family: monospace;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  padding: 6px 4px 2px 4px;
+}
+
+/* --------------------------------------------------------------- raw view */
+
+.log-text {
+  font-family: monospace;
+  padding: 10px 14px;
+}
+.log-text text { background: none; }
+
+/* ------------------------------------------------------------------ misc */
+
+.locked-row { opacity: 0.72; }
+
+.count-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0 7px;
+  border-radius: 999px;
+  background-color: alpha(currentColor, 0.12);
+  font-feature-settings: "tnum" 1;
+}
+.count-badge.is-error   { background-color: alpha(@error_color, 0.18); color: @error_color; }
+.count-badge.is-warning { background-color: alpha(@warning_color, 0.20); color: @warning_color; }
+
+.section-heading {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.path-label {
+  font-family: monospace;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.tabular { font-feature-settings: "tnum" 1; }

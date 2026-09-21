@@ -1,0 +1,192 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install checkers
+        run: python -m pip install --upgrade pip ruff build
+
+      - name: Lint
+        run: ruff check src tests
+
+      - name: Unit tests
+        run: PYTHONPATH=src python -m unittest discover -s tests -v
+
+      - name: Import the UI against real GTK4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 \
+            libadwaita-1-0 xvfb
+          # The system python has the GObject bindings; the checkout is on PYTHONPATH.
+          xvfb-run -a env PYTHONPATH=src GDK_BACKEND=x11 GSK_RENDERER=cairo \
+            python3 -c "
+          import logread.app, logread.ui.window, logread.ui.logpage
+          import logread.ui.sidebar, logread.ui.overview, logread.ui.problems
+          import logread.ui.rawview, logread.ui.timeline, logread.ui.preferences
+          print('UI modules import cleanly against GTK4')
+          "
+
+  wheel:
+    name: Python wheel and sdist
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Check metadata
+        run: |
+          python -m pip install --upgrade twine
+          twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logread-python
+          path: dist/*
+          if-no-files-found: error
+
+  deb:
+    name: Debian package
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends dpkg-dev fakeroot
+
+      - name: Assemble the package tree
+        run: |
+          VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -1)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          ROOT="pkgroot"
+          SITE="$ROOT/usr/lib/python3/dist-packages"
+          mkdir -p "$SITE" "$ROOT/usr/bin" "$ROOT/DEBIAN" \
+                   "$ROOT/usr/share/applications" \
+                   "$ROOT/usr/share/metainfo" \
+                   "$ROOT/usr/share/icons/hicolor/scalable/apps" \
+                   "$ROOT/usr/share/icons/hicolor/symbolic/apps" \
+                   "$ROOT/usr/share/doc/logread"
+          cp -r src/logread "$SITE/"
+          find "$SITE" -name '__pycache__' -type d -exec rm -rf {} +
+          sed 's|@PYTHON@|/usr/bin/python3|' logread.in > "$ROOT/usr/bin/logread"
+          chmod 755 "$ROOT/usr/bin/logread"
+          cp data/io.github.isaluki.LogRead.desktop "$ROOT/usr/share/applications/"
+          cp data/io.github.isaluki.LogRead.metainfo.xml "$ROOT/usr/share/metainfo/"
+          cp data/icons/hicolor/scalable/apps/*.svg "$ROOT/usr/share/icons/hicolor/scalable/apps/"
+          cp data/icons/hicolor/symbolic/apps/*.svg "$ROOT/usr/share/icons/hicolor/symbolic/apps/"
+          cp README.md LICENSE "$ROOT/usr/share/doc/logread/"
+          cat > "$ROOT/DEBIAN/control" <<CONTROL
+          Package: logread
+          Version: $VERSION
+          Section: utils
+          Priority: optional
+          Architecture: all
+          Depends: python3 (>= 3.9), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, libadwaita-1-0
+          Recommends: policykit-1, systemd
+          Maintainer: The LogRead contributors <noreply@github.com>
+          Homepage: https://github.com/iSaluki/logread
+          Description: Read the logs on this computer
+           LogRead finds the logs on your computer and shows them by the
+           application or service they belong to, summarises the errors and
+           warnings in each, and shows the raw text when you want it.
+          CONTROL
+
+      - name: Build the .deb
+        run: |
+          fakeroot dpkg-deb --build pkgroot "logread_${VERSION}_all.deb"
+          dpkg-deb --info "logread_${VERSION}_all.deb"
+          dpkg-deb --contents "logread_${VERSION}_all.deb" | head -30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logread-deb
+          path: "*.deb"
+          if-no-files-found: error
+
+  rpm:
+    name: Fedora package
+    needs: check
+    runs-on: ubuntu-latest
+    container: fedora:41
+    steps:
+      - name: Install packaging tools
+        run: dnf -y install rpm-build python3-devel git-core sed findutils
+
+      - uses: actions/checkout@v4
+
+      - name: Build the RPM
+        run: |
+          VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -1)"
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          tar --exclude-vcs --transform "s,^\\.,logread-$VERSION," -czf \
+            ~/rpmbuild/SOURCES/logread-$VERSION.tar.gz .
+          sed "s/@VERSION@/$VERSION/g" packaging/logread.spec.in > ~/rpmbuild/SPECS/logread.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/logread.spec
+          mkdir -p out
+          find ~/rpmbuild/RPMS ~/rpmbuild/SRPMS -name '*.rpm' -exec cp {} out/ \;
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logread-rpm
+          path: out/*.rpm
+          if-no-files-found: error
+
+  release:
+    name: Publish a release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [wheel, deb, rpm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect the build outputs
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name '*.whl' -o -name '*.tar.gz' -o -name '*.deb' -o -name '*.rpm' \) \
+            -exec cp {} release/ \;
+          ls -la release
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true

@@ -1,0 +1,66 @@
+%global appid io.github.isaluki.LogRead
+
+Name:           logread
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        Read the logs on this computer
+
+License:        GPL-3.0-or-later
+URL:            https://github.com/iSaluki/logread
+Source0:        %{name}-%{version}.tar.gz
+
+BuildArch:      noarch
+BuildRequires:  python3-devel
+
+Requires:       python3 >= 3.9
+Requires:       python3-gobject
+Requires:       gtk4
+Requires:       libadwaita
+Recommends:     polkit
+Recommends:     systemd
+
+%description
+LogRead finds the logs on your computer and shows them by the application or
+service they belong to, so you do not have to know where each one lives. It
+summarises the errors and warnings in a log, charts when they happened, groups
+repeated problems together, and shows the raw text when you want it. It reads
+plain files, rotated and compressed archives, and the systemd journal.
+
+%prep
+%autosetup -n %{name}-%{version}
+
+%build
+# Pure Python; nothing to compile.
+
+%install
+mkdir -p %{buildroot}%{python3_sitelib}
+cp -r src/logread %{buildroot}%{python3_sitelib}/
+find %{buildroot}%{python3_sitelib} -name '__pycache__' -type d -exec rm -rf {} +
+
+mkdir -p %{buildroot}%{_bindir}
+sed 's|@PYTHON@|%{__python3}|' logread.in > %{buildroot}%{_bindir}/logread
+chmod 755 %{buildroot}%{_bindir}/logread
+
+install -Dm644 data/%{appid}.desktop %{buildroot}%{_datadir}/applications/%{appid}.desktop
+install -Dm644 data/%{appid}.metainfo.xml %{buildroot}%{_datadir}/metainfo/%{appid}.metainfo.xml
+install -Dm644 data/icons/hicolor/scalable/apps/%{appid}.svg \
+  %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg
+install -Dm644 data/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg \
+  %{buildroot}%{_datadir}/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg
+
+%check
+PYTHONPATH=src %{__python3} -m unittest discover -s tests
+
+%files
+%license LICENSE
+%doc README.md
+%{_bindir}/logread
+%{python3_sitelib}/logread/
+%{_datadir}/applications/%{appid}.desktop
+%{_datadir}/metainfo/%{appid}.metainfo.xml
+%{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg
+%{_datadir}/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg
+
+%changelog
+* Mon Sep 21 2026 The LogRead contributors <noreply@github.com> - @VERSION@-1
+- First release.

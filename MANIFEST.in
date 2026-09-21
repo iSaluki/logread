@@ -1,0 +1,5 @@
+include README.md LICENSE logread logread.in meson.build
+recursive-include data *
+recursive-include packaging *
+recursive-include src/logread *.css
+recursive-include tests *.py
