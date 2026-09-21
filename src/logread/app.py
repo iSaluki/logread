@@ -14,7 +14,7 @@ from gi.repository import Adw, Gdk, Gio, GLib, Gtk  # noqa: E402
 from .config import APP_ID, APP_NAME, load_settings  # noqa: E402
 from .ui.window import LogReadWindow  # noqa: E402
 
-__all__ = ["LogReadApplication", "main"]
+__all__ = ["LogReadApplication", "install_styles", "main"]
 
 VERSION = "1.0.0"
 
@@ -39,7 +39,7 @@ class LogReadApplication(Adw.Application):
     # -- lifecycle ------------------------------------------------------
     def do_startup(self) -> None:
         Adw.Application.do_startup(self)
-        self._load_styles()
+        install_styles()
         self._install_actions()
 
     def do_activate(self) -> None:
@@ -57,19 +57,6 @@ class LogReadApplication(Adw.Application):
         return 0
 
     # -- setup ----------------------------------------------------------
-    def _load_styles(self) -> None:
-        display = Gdk.Display.get_default()
-        if display is None:
-            return
-        provider = Gtk.CssProvider()
-        css = _read_stylesheet()
-        if not css:
-            return
-        provider.load_from_data(css.encode("utf-8"))
-        Gtk.StyleContext.add_provider_for_display(
-            display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
-
     def _install_actions(self) -> None:
         quit_action = Gio.SimpleAction.new("quit", None)
         quit_action.connect("activate", lambda *_a: self.quit())
@@ -113,6 +100,26 @@ class LogReadApplication(Adw.Application):
             license_type=Gtk.License.GPL_3_0,
         )
         about.present()
+
+
+def install_styles() -> bool:
+    """Add LogRead's stylesheet to the default display.
+
+    Returns whether it was applied, so callers that care — the smoke test —
+    can fail rather than silently render an unstyled window.
+    """
+    display = Gdk.Display.get_default()
+    if display is None:
+        return False
+    css = _read_stylesheet()
+    if not css:
+        return False
+    provider = Gtk.CssProvider()
+    provider.load_from_data(css.encode("utf-8"))
+    Gtk.StyleContext.add_provider_for_display(
+        display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+    )
+    return True
 
 
 def _read_stylesheet() -> str:

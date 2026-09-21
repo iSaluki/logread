@@ -35,20 +35,40 @@ jobs:
       - name: Unit tests
         run: PYTHONPATH=src python -m unittest discover -s tests -v
 
-      - name: Import the UI against real GTK4
+      - name: Install GTK4 and the GObject bindings
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 \
-            libadwaita-1-0 xvfb
-          # The system python has the GObject bindings; the checkout is on PYTHONPATH.
+            libadwaita-1-0 adwaita-icon-theme xvfb
+
+      - name: Import the UI against real GTK4
+        # python3-gi installs into the distribution's interpreter, so this step
+        # uses /usr/bin/python3 rather than the one setup-python put on PATH.
+        run: |
+          /usr/bin/python3 -c "import gi; print('PyGObject', gi.__version__)"
           xvfb-run -a env PYTHONPATH=src GDK_BACKEND=x11 GSK_RENDERER=cairo \
-            python3 -c "
+            /usr/bin/python3 -c "
+          import gi
+          gi.require_version('Gtk', '4.0')
+          gi.require_version('Adw', '1')
+          from gi.repository import Adw, Gtk
+          Adw.init()
           import logread.app, logread.ui.window, logread.ui.logpage
           import logread.ui.sidebar, logread.ui.overview, logread.ui.problems
           import logread.ui.rawview, logread.ui.timeline, logread.ui.preferences
-          print('UI modules import cleanly against GTK4')
+          import logread.ui.icons, logread.ui.dialogs, logread.ui.format
+          print('UI modules import cleanly against GTK %d.%d / libadwaita %d.%d'
+                % (Gtk.get_major_version(), Gtk.get_minor_version(),
+                   Adw.MAJOR_VERSION, Adw.MINOR_VERSION))
           "
+
+      - name: Build the window headlessly
+        # Constructing the whole widget tree catches the mistakes that only
+        # appear when GTK actually realises a widget.
+        run: |
+          xvfb-run -a env PYTHONPATH=src GDK_BACKEND=x11 GSK_RENDERER=cairo \
+            /usr/bin/python3 tests/smoke_window.py
 
   wheel:
     name: Python wheel and sdist
@@ -145,7 +165,7 @@ jobs:
     container: fedora:41
     steps:
       - name: Install packaging tools
-        run: dnf -y install rpm-build python3-devel git-core sed findutils
+        run: dnf -y install rpm-build python3-devel git-core sed findutils tar gzip
 
       - uses: actions/checkout@v4
 

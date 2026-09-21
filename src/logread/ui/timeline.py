@@ -49,7 +49,18 @@ class TimelineStrip(Gtk.Box):
 
         self._bars = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
         self._bars.set_size_request(-1, _PROBLEM_HEIGHT + _VOLUME_HEIGHT + 10)
-        self.append(self._bars)
+
+        # Fifty-odd columns are each a button, and a button carries a minimum
+        # width. The stylesheet trims that to a couple of pixels, but the
+        # window must stay resizable even if the stylesheet is ever missing,
+        # so the strip sits in a viewport that is allowed to be narrower than
+        # its contents rather than forcing the whole window wider.
+        viewport = Gtk.ScrolledWindow()
+        viewport.set_policy(Gtk.PolicyType.EXTERNAL, Gtk.PolicyType.NEVER)
+        viewport.set_propagate_natural_width(True)
+        viewport.set_propagate_natural_height(True)
+        viewport.set_child(self._bars)
+        self.append(viewport)
 
         self._axis = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self._start_label = Gtk.Label(xalign=0.0)

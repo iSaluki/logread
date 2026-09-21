@@ -58,21 +58,29 @@
 .activity-strip {
   padding: 4px 2px 0 2px;
 }
-.activity-bucket {
+
+/* Written as button.activity-bucket, not .activity-bucket: Adwaita styles
+ * plain "button" with a 16px minimum and 8px of side padding, which at 56
+ * columns would demand two thousand pixels and stop the window from ever
+ * being narrow. */
+button.activity-bucket {
+  min-width: 2px;
+  min-height: 0;
   padding: 0;
   margin: 0 1px;
-  min-width: 4px;
   border-radius: 3px;
   background: none;
+  background-image: none;
   box-shadow: none;
   border: none;
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
-.activity-bucket:hover { background-color: alpha(currentColor, 0.10); }
-.activity-bucket.is-selected { background-color: alpha(@accent_color, 0.20); }
+button.activity-bucket:hover { background-color: alpha(currentColor, 0.10); }
+button.activity-bucket:active { background-color: alpha(currentColor, 0.16); }
+button.activity-bucket.is-selected { background-color: alpha(@accent_color, 0.20); }
 
 .activity-segment {
-  min-width: 4px;
+  min-width: 2px;
   border-radius: 2px;
   margin-top: 1px;
 }
