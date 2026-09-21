@@ -1,9 +1,17 @@
 #!@PYTHON@
-"""Installed launcher for LogRead."""
+"""Installed launcher for LogRead.
+
+The package is installed into a directory that does not carry a Python
+version in its name, so that upgrading the system Python does not strand
+the application and one built package works across distribution releases.
+That directory is put on the path here.
+"""
 
 import sys
 
-from logread.app import main
+sys.path.insert(1, "@PKGDATADIR@")
+
+from logread.app import main  # noqa: E402
 
 if __name__ == "__main__":
     sys.exit(main())

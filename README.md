@@ -63,13 +63,21 @@ problems that repeat most.
 
 ### From a package
 
-Every commit to `main` builds a wheel, an sdist, a `.deb` and an `.rpm`; they
-are attached to the workflow run, and to the release for tagged versions.
+Every commit to `main` builds a wheel, an sdist, a `.deb` and an `.rpm` and
+publishes them to the [`continuous`](https://github.com/iSaluki/logread/releases/tag/continuous)
+prerelease, which is replaced by each new commit. Tagged versions get a
+permanent release of their own.
 
 ```
 sudo dnf install ./logread-1.0.0-1.noarch.rpm      # Fedora, RHEL
 sudo apt install ./logread_1.0.0_all.deb           # Debian, Ubuntu
+pipx install ./logread-1.0.0-py3-none-any.whl      # anywhere else
 ```
+
+Both the `.deb` and the `.rpm` are architecture independent and carry no
+dependency on a particular Python version — the application is installed
+outside the versioned `site-packages` directory, so one built package
+installs across distribution releases and survives a system Python upgrade.
 
 ### From source
 

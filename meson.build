@@ -13,16 +13,21 @@ gnome = import('gnome')
 app_id = 'io.github.isaluki.LogRead'
 pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
 
+# Installed here rather than into a versioned site-packages directory, so
+# that a system Python upgrade does not strand the installation.
 install_subdir(
   'src/logread',
-  install_dir: python.get_install_dir(),
+  install_dir: pkgdatadir,
   exclude_directories: ['__pycache__', 'core/__pycache__', 'ui/__pycache__'],
 )
 
 configure_file(
   input: 'logread.in',
   output: 'logread',
-  configuration: configuration_data({'PYTHON': python.full_path()}),
+  configuration: configuration_data({
+    'PYTHON': python.full_path(),
+    'PKGDATADIR': pkgdatadir,
+  }),
   install: true,
   install_dir: get_option('bindir'),
   install_mode: 'rwxr-xr-x',

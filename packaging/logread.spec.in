@@ -1,4 +1,5 @@
 %global appid io.github.isaluki.LogRead
+%global pkgdatadir %{_datadir}/%{name}
 
 Name:           logread
 Version:        @VERSION@
@@ -10,7 +11,6 @@ URL:            https://github.com/iSaluki/logread
 Source0:        %{name}-%{version}.tar.gz
 
 BuildArch:      noarch
-BuildRequires:  python3-devel
 
 Requires:       python3 >= 3.9
 Requires:       python3-gobject
@@ -18,6 +18,12 @@ Requires:       gtk4
 Requires:       libadwaita
 Recommends:     polkit
 Recommends:     systemd
+
+# The application is installed under the shared data directory rather than
+# under a versioned site-packages directory. A versioned path makes rpm
+# generate a python(abi) dependency on whichever Python the build host had,
+# which stops one noarch package from installing on any other release.
+%global __python_requires %{nil}
 
 %description
 LogRead finds the logs on your computer and shows them by the application or
@@ -33,12 +39,14 @@ plain files, rotated and compressed archives, and the systemd journal.
 # Pure Python; nothing to compile.
 
 %install
-mkdir -p %{buildroot}%{python3_sitelib}
-cp -r src/logread %{buildroot}%{python3_sitelib}/
-find %{buildroot}%{python3_sitelib} -name '__pycache__' -type d -exec rm -rf {} +
+mkdir -p %{buildroot}%{pkgdatadir}
+cp -r src/logread %{buildroot}%{pkgdatadir}/
+find %{buildroot}%{pkgdatadir} -name '__pycache__' -type d -exec rm -rf {} +
 
 mkdir -p %{buildroot}%{_bindir}
-sed 's|@PYTHON@|%{__python3}|' logread.in > %{buildroot}%{_bindir}/logread
+sed -e 's|@PYTHON@|/usr/bin/python3|' \
+    -e 's|@PKGDATADIR@|%{pkgdatadir}|' \
+    logread.in > %{buildroot}%{_bindir}/logread
 chmod 755 %{buildroot}%{_bindir}/logread
 
 install -Dm644 data/%{appid}.desktop %{buildroot}%{_datadir}/applications/%{appid}.desktop
@@ -49,13 +57,13 @@ install -Dm644 data/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg \
   %{buildroot}%{_datadir}/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg
 
 %check
-PYTHONPATH=src %{__python3} -m unittest discover -s tests
+PYTHONPATH=src /usr/bin/python3 -m unittest discover -s tests
 
 %files
 %license LICENSE
 %doc README.md
 %{_bindir}/logread
-%{python3_sitelib}/logread/
+%{pkgdatadir}/
 %{_datadir}/applications/%{appid}.desktop
 %{_datadir}/metainfo/%{appid}.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg
