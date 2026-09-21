@@ -164,10 +164,21 @@ jobs:
     name: Fedora package
     needs: check
     runs-on: ubuntu-latest
-    container: fedora:41
+    # Pinned so a new Fedora cannot change the build under us. Bump it when a
+    # release goes end of life, or its repository metadata stops resolving.
+    # The package itself is version independent, so one built here installs on
+    # older releases too.
+    container: fedora:44
     steps:
       - name: Install packaging tools
-        run: dnf -y install rpm-build git-core sed findutils tar gzip
+        # python3 is listed explicitly. It used to arrive by way of
+        # python3-devel, and dropping that left the %check stage with no
+        # interpreter to run the tests with.
+        run: |
+          dnf -y install rpm-build git-core sed findutils tar gzip python3
+          for tool in rpmbuild tar gzip sed find python3; do
+            command -v "$tool" >/dev/null || { echo "missing build tool: $tool"; exit 1; }
+          done
 
       - uses: actions/checkout@v4
 
@@ -182,6 +193,28 @@ jobs:
           mkdir -p out
           find ~/rpmbuild/RPMS ~/rpmbuild/SRPMS -name '*.rpm' -exec cp {} out/ \;
           ls -la out
+
+      - name: Install what was built
+        # Building a package says nothing about whether it can be installed.
+        # This resolves its dependencies for real, which is what catches a
+        # package accidentally pinned to the build host's Python, and then
+        # imports it through the path the launcher uses.
+        run: |
+          dnf -y install ./out/logread-*.noarch.rpm
+          echo "--- dependencies as resolved ---"
+          rpm -q --requires logread | grep -v '^rpmlib'
+          echo "--- the launcher ---"
+          test -x /usr/bin/logread
+          head -1 /usr/bin/logread
+          echo "--- importable from where the launcher looks ---"
+          /usr/bin/python3 -c "
+          import sys
+          sys.path.insert(1, '/usr/share/logread')
+          import logread.app
+          from importlib.resources import files
+          assert (files('logread.ui') / 'style.css').is_file(), 'the stylesheet is missing'
+          print('LogRead', logread.app.VERSION, 'installs, imports and carries its stylesheet')
+          "
 
       - uses: actions/upload-artifact@v4
         with:

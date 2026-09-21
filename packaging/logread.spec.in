@@ -23,7 +23,6 @@ Recommends:     systemd
 # under a versioned site-packages directory. A versioned path makes rpm
 # generate a python(abi) dependency on whichever Python the build host had,
 # which stops one noarch package from installing on any other release.
-%global __python_requires %{nil}
 
 %description
 LogRead finds the logs on your computer and shows them by the application or
